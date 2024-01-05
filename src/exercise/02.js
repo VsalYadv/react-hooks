@@ -3,14 +3,30 @@
 
 import * as React from 'react'
 
-function Greeting({initialName = ''}) {
-  // 🐨 initialize the state to the value from localStorage
-  // 💰 window.localStorage.getItem('name') ?? initialName
-  const [name, setName] = React.useState(initialName)
+function useSyncState(key1,defaultValue='',{
+  serialize =  JSON.stringify,
+  deserialize = JSON.parse,
 
-  // 🐨 Here's where you'll use `React.useEffect`.
-  // The callback should set the `name` in localStorage.
-  // 💰 window.localStorage.setItem('name', name)
+}={}){   //custom hook
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [state, setState] = React.useState(() => deserialize(window.localStorage.getItem('key1')) || defaultValue)//Lazy loading callback
+
+  
+  const prevKeyRef = React.useRef(key1)
+  React.useEffect (()=>{
+    const prevKey = prevKeyRef.current
+    if( prevKey !==key1){
+      window.localStorage.removeItem(prevKey)
+    }
+    prevKeyRef.current=key1
+   window.localStorage.setItem(key1, serialize(state))},[key1, serialize, state]
+  )
+  return[state,setState]
+}
+
+function Greeting({initialName = ''}) {
+ const [name,setName]= useSyncState('name3',initialName)
+  //const[name,setName]= React.useState(initialName)
 
   function handleChange(event) {
     setName(event.target.value)
@@ -27,7 +43,7 @@ function Greeting({initialName = ''}) {
 }
 
 function App() {
-  return <Greeting />
+  return <Greeting initialName='default' />
 }
 
 export default App
